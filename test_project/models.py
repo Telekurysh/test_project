@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import datetime
 
 
 class CategoryManager(models.Manager):
@@ -8,12 +9,14 @@ class CategoryManager(models.Manager):
 
 
 class Category(models.Model):
-    objects = CategoryManager()
     name = models.CharField(max_length=100)
     description = models.TextField()
 
     def __str__(self):
         return self.name
+
+    def get_products_count(self):
+        return self.product_set.count()
 
 
 class ProductManager(models.Manager):
@@ -34,6 +37,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    def is_expensive(self):
+        return self.price > 100
 
 
 class OrderManager(models.Manager):
@@ -65,6 +71,9 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def is_positive(self):
+        return self.rating >= 4
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -74,6 +83,18 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+    def get_full_name(self):
+        return f"{self.user.first_name} {self.user.last_name}"
+
+    def get_age(self):
+        if self.date_of_birth:
+            today = datetime.date.today()
+            age = today.year - self.date_of_birth.year - (
+                    (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+            return age
+        else:
+            return None
 
 
 class CartManager(models.Manager):
