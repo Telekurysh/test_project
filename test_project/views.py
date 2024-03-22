@@ -1,30 +1,36 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from .models import Product, Cart, CartItem, Order, OrderItem, Category, Review, UserProfile
 
 
 def product_list(request):
     products = Product.objects.all()
-    return render(request, 'product_list.html', {'products': products})
+    data = {"products": list(products.values())}
+    return JsonResponse(data)
 
 
 def category_list(request):
     categories = Category.objects.all()
-    return render(request, 'category_list.html', {'categories': categories})
+    data = {"categories": list(categories.values())}
+    return JsonResponse(data)
 
 
 def review_list(request):
     reviews = Review.objects.all()
-    return render(request, 'review_list.html', {'reviews': reviews})
+    data = {"reviews": list(reviews.values())}
+    return JsonResponse(data)
 
 
 def profile_detail(request, user_id):
-    profile = UserProfile.objects.get(user_id=user_id)
-    return render(request, 'profile_detail.html', {'profile': profile})
+    profile = get_object_or_404(UserProfile, user_id=user_id)
+    data = {"profile": model_to_dict(profile)}
+    return JsonResponse(data)
 
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
-    return render(request, 'product_detail.html', {'product': product})
+    data = {"product": model_to_dict(product)}
+    return JsonResponse(data)
 
 
 def add_to_cart(request, product_id):
@@ -34,12 +40,17 @@ def add_to_cart(request, product_id):
     if not created:
         cart_item.quantity += 1
         cart_item.save()
-    return redirect('cart')
+    return JsonResponse({"status": "success"})
 
 
 def cart_detail(request):
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    return render(request, 'cart_detail.html', {'cart': cart})
+    cart_items = list(cart.cartitem_set.all().values())
+    total_price = str(cart.total_price)  # Преобразуем Decimal в строку
+    data = {"cart": {"items": cart_items, "total_price": total_price}}
+    return JsonResponse(data)
+
+
 
 
 def create_order(request):
@@ -48,8 +59,8 @@ def create_order(request):
     for cart_item in cart.cartitem_set.all():
         OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity)
     cart.delete()
-    return redirect('order_confirmation')
+    return JsonResponse({"status": "success"})
 
 
 def order_confirmation(request):
-    return render(request, 'order_confirmation.html')
+    return JsonResponse({"status": "success"})
