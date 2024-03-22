@@ -74,3 +74,30 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class CartManager(models.Manager):
+    def get_or_create_cart(self, user):
+        cart, created = self.get_or_create(user=user)
+        return cart
+
+
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class CartItemManager(models.Manager):
+    def add_to_cart(self, cart, product, quantity=1):
+        cart_item, created = self.get_or_create(cart=cart, product=product)
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+        return cart_item
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
